@@ -12,7 +12,7 @@ public class MTLODSetting : MeshLODCreate
     public virtual void OnGUIDraw(int idx)
     {
         bEditorUIFoldout = EditorGUILayout.Foldout(bEditorUIFoldout, string.Format("LOD {0}", idx));
-        if (!bEditorUIFoldout)
+        if (bEditorUIFoldout)
         {
             EditorGUI.indentLevel++;
             int curRate = Mathf.FloorToInt(Mathf.Pow(2, Subdivision));
@@ -153,7 +153,7 @@ public class MTMeshEditor : EditorWindow
                     break;
             }
             dataCreateJob.EndProcess();
-            //caculate min_tri size
+            //calculate min_tri size
             int max_sub = 1;
             foreach(var setting in LODSettings)
             {

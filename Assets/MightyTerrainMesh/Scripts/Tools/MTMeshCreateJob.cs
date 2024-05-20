@@ -16,10 +16,7 @@
         private int curLodIdx = 0;
         public bool IsDone
         {
-            get
-            {
-                return curLodIdx >= LODs.Length;
-            }
+            get { return curLodIdx >= LODs.Length; }
         }
         public float progress
         {
@@ -32,7 +29,8 @@
                 return 1;
             }
         }
-        public CreateMeshJob(Terrain t, Bounds VolumnBound, int mx, int mz, MeshLODCreate[] setting)
+
+        public CreateMeshJob(Terrain t, Bounds VolumeBound, int mx, int mz, MeshLODCreate[] setting)
         {
             LODs = new MTTerrainScanner[setting.Length];
             for (int i = 0; i < setting.Length; ++i)
@@ -40,10 +38,11 @@
                 MeshLODCreate s = setting[i];
                 //only first lod stitch borders, other lod use the most detailed border to avoid 
                 //tearing on the border
-                LODs[i] = new MTTerrainScanner(t, VolumnBound, s.Subdivision, s.SlopeAngleError, mx, mz,
+                LODs[i] = new MTTerrainScanner(t, VolumeBound, s.Subdivision, s.SlopeAngleError, mx, mz,
                     i == 0);
             }
         }
+
         public void Update()
         {
             if (LODs == null || IsDone)
@@ -52,6 +51,7 @@
             if (LODs[curLodIdx].IsDone)
                 ++curLodIdx;
         }
+
         public void EndProcess()
         {
             //copy borders
@@ -60,11 +60,11 @@
             for (int i = 1; i < LODs.Length; ++i)
             {
                 MTTerrainScanner scaner = LODs[i];
-                for (int t=0; t<detail.Trees.Length; ++t)
+                for (int t = 0; t < detail.Trees.Length; ++t)
                 {
                     SamplerTree dt = detail.Trees[t];
                     SamplerTree lt = scaner.Trees[t];
-                    foreach(var b in dt.Boundaries)
+                    foreach (var b in dt.Boundaries)
                     {
                         lt.Boundaries.Add(b.Key, b.Value);
                     }
@@ -81,10 +81,7 @@
         private int curLodIdx = 0;
         public bool IsDone
         {
-            get
-            {
-                return curLodIdx >= LODs.Length;
-            }
+            get { return curLodIdx >= LODs.Length; }
         }
         public float progress
         {
@@ -97,21 +94,23 @@
                 return 1;
             }
         }
-        public CreateDataJob(Terrain t, Bounds VolumnBound, int depth, MeshLODCreate[] setting, float minEdge)
+
+        public CreateDataJob(Terrain t, Bounds VolumeBound, int depth, MeshLODCreate[] setting, float minEdge)
         {
             LODs = new MTTerrainScanner[setting.Length];
             min_edge_len = minEdge;
             int depth_stride = Mathf.Max(1, depth / setting.Length);
             for (int i = 0; i < setting.Length; ++i)
             {
-                var subdiv = setting[i].Subdivision;
-                var angleErr = setting[i].SlopeAngleError;
+                var s = setting[i];
                 var sub_depth = Mathf.Max(1, depth - i * depth_stride);
                 int grid_count = 1 << sub_depth;
                 //use last lod stitch borders to avoid tearing on the border
-                LODs[i] = new MTTerrainScanner(t, VolumnBound, subdiv, angleErr, grid_count, grid_count, i == 0);
+                LODs[i] = new MTTerrainScanner(t, VolumeBound, s.Subdivision, s.SlopeAngleError,
+                    grid_count, grid_count, i == 0);
             }
         }
+
         public void Update()
         {
             if (LODs == null || IsDone)
@@ -120,15 +119,16 @@
             if (LODs[curLodIdx].IsDone)
                 ++curLodIdx;
         }
+
         public void EndProcess()
         {
             LODs[0].FillData();
-            for (int i = 1; i<LODs.Length; ++i)
+            for (int i = 1; i < LODs.Length; ++i)
             {
                 //copy borders
                 MTTerrainScanner detail = LODs[i - 1];
-                MTTerrainScanner scaner = LODs[i];
-                foreach (var t in scaner.Trees)
+                MTTerrainScanner scanner = LODs[i];
+                foreach (var t in scanner.Trees)
                 {
                     t.InitBoundary();
                     //Debug.Log("start collect boundary : ");
@@ -140,9 +140,10 @@
                         }
                     }
                 }
-                scaner.FillData();
+                scanner.FillData();
             }
         }
+
         private byte GetBorderType(Bounds container, Bounds child)
         {
             byte btype = byte.MaxValue;
@@ -178,11 +179,12 @@
             }
             return btype;
         }
+
         private void AddBoundaryFromDetail(SamplerTree container, SamplerTree detail, float minDis)
         {
             byte bt = GetBorderType(container.BND, detail.BND);
             //Debug.Log("detail type : " + bt);
-            switch(bt)
+            switch (bt)
             {
                 case SamplerTree.LBorder:
                     container.MergeBoundary(SamplerTree.LBorder, minDis, detail.Boundaries[SamplerTree.LTCorner]);
@@ -238,7 +240,7 @@
         }
     }
 
-    public class MTTerrainScanner : ITerrainTreeScaner
+    public class MTTerrainScanner : ITerrainTreeScanner
     {
         public int maxX { get; private set; }
         public int maxZ { get; private set; }
@@ -247,53 +249,53 @@
         public Vector2 gridSize { get; private set; }
         public int detailedSize = 1;
         public SamplerTree[] Trees { get; private set; }
-        public Vector3 center { get { return volBnd.center; } }
+        public Vector3 center
+        {
+            get { return volBnd.center; }
+        }
         private int curXIdx = 0;
         private int curZIdx = 0;
-        private bool stitchBorder = true;
+        private bool stitchBorder;
         public bool IsDone
         {
-            get
-            {
-                return curXIdx >= maxX && curZIdx >= maxZ;
-            }
+            get { return curXIdx >= maxX && curZIdx >= maxZ; }
         }
         public float progress
         {
-            get
-            {
-                return (float)(curXIdx + curZIdx * maxX) / (float)(maxX * maxZ);
-            }
+            get { return (float)(curXIdx + curZIdx * maxX) / (float)(maxX * maxZ); }
         }
         private Bounds volBnd;
         private Terrain terrain;
         private Vector3 check_start;
-        public MTTerrainScanner(Terrain t, Bounds VolumnBound, int sub, float angleErr, int mx, int mz, bool sbrd)
+
+        public MTTerrainScanner(Terrain t, Bounds VolumeBound, int sub, float angleErr, int mx, int mz, bool sbrd)
         {
             terrain = t;
-            volBnd = VolumnBound;
+            volBnd = VolumeBound;
             maxX = mx;
             maxZ = mz;
             subdivision = Mathf.Max(1, sub);
             slopeAngleErr = angleErr;
             stitchBorder = sbrd;
-            gridSize = new Vector2(VolumnBound.size.x / mx, VolumnBound.size.z / mz);
+            gridSize = new Vector2(VolumeBound.size.x / mx, VolumeBound.size.z / mz);
 
-            check_start = new Vector3(VolumnBound.center.x - VolumnBound.size.x / 2,
-                 VolumnBound.center.y + VolumnBound.size.y / 2,
-                 VolumnBound.center.z - VolumnBound.size.z / 2);
+            check_start = new Vector3(VolumeBound.center.x - VolumeBound.size.x / 2,
+                VolumeBound.center.y + VolumeBound.size.y / 2,
+                VolumeBound.center.z - VolumeBound.size.z / 2);
             //
             detailedSize = 1 << subdivision;
             //
             Trees = new SamplerTree[maxX * maxZ];
         }
+
         public SamplerTree GetSubTree(int x, int z)
         {
             if (x < 0 || x >= maxX || z < 0 || z >= maxZ)
                 return null;
             return Trees[x * maxZ + z];
         }
-        void ITerrainTreeScaner.Run(Vector3 center, out Vector3 hitpos, out Vector3 hitnormal)
+
+        void ITerrainTreeScanner.Run(Vector3 center, out Vector3 hitpos, out Vector3 hitnormal)
         {
             hitpos = center;
             float fx = (center.x - volBnd.min.x) / volBnd.size.x;
@@ -301,75 +303,86 @@
             hitpos.y = terrain.SampleHeight(center) + terrain.gameObject.transform.position.y;
             hitnormal = terrain.terrainData.GetInterpolatedNormal(fx, fy);
         }
+
         private void ScanTree(SamplerTree sampler)
         {
             sampler.RunSampler(this);
             if (!stitchBorder)
                 return;
-            int detailedX = curXIdx * detailedSize;
-            int detailedZ = curZIdx * detailedSize;
+
+            int detailedMinX = curXIdx * detailedSize;
+            int detailedMinZ = curZIdx * detailedSize;
+            int detailedMaxX = detailedMinX + detailedSize - 1;
+            int detailedMaxZ = detailedMinZ + detailedSize - 1;
+
             //boundary
-            float bfx = curXIdx * gridSize[0];
-            float bfz = curZIdx * gridSize[1];
+            float bfx = curXIdx * gridSize.x;
+            float bfz = curZIdx * gridSize.y;
             float borderOffset = 0;
             if (curXIdx == 0 || curZIdx == 0 || curXIdx == maxX - 1 || curZIdx == maxZ - 1)
                 borderOffset = 0.000001f;
+
+            // corner
             RayCastBoundary(bfx + borderOffset, bfz + borderOffset,
-                detailedX, detailedZ, SamplerTree.LBCorner, sampler);
-            RayCastBoundary(bfx + borderOffset, bfz + gridSize[1] - borderOffset,
-                detailedX, detailedZ + detailedSize - 1, SamplerTree.LTCorner, sampler);
-            RayCastBoundary(bfx + gridSize[0] - borderOffset, bfz + gridSize[1] - borderOffset,
-                detailedX + detailedSize - 1, detailedZ + detailedSize - 1, SamplerTree.RTCorner, sampler);
-            RayCastBoundary(bfx + gridSize[0] - borderOffset, bfz + borderOffset,
-                detailedX + detailedSize - 1, detailedZ, SamplerTree.RBCorner, sampler);
+                detailedMinX, detailedMinZ, SamplerTree.LBCorner, sampler);
+            RayCastBoundary(bfx + borderOffset, bfz + gridSize.y - borderOffset,
+                detailedMinX, detailedMaxZ, SamplerTree.LTCorner, sampler);
+            RayCastBoundary(bfx + gridSize.x - borderOffset, bfz + gridSize.y - borderOffset,
+                detailedMaxX, detailedMaxZ, SamplerTree.RTCorner, sampler);
+            RayCastBoundary(bfx + gridSize.x - borderOffset, bfz + borderOffset,
+                detailedMaxX, detailedMinZ, SamplerTree.RBCorner, sampler);
+
+            // border
             for (int u = 1; u < detailedSize; ++u)
             {
-                float fx = (curXIdx + (float)u / detailedSize) * gridSize[0];
-                RayCastBoundary(fx, bfz + borderOffset, u + detailedX, detailedZ, SamplerTree.BBorder, sampler);
-                RayCastBoundary(fx, bfz + gridSize[1] - borderOffset,
-                    u + detailedX, detailedZ + detailedSize - 1, SamplerTree.TBorder, sampler);
+                float fx = (curXIdx + (float)u / detailedSize) * gridSize.x;
+                RayCastBoundary(fx, bfz + borderOffset,
+                    u + detailedMinX, detailedMinZ, SamplerTree.BBorder, sampler);
+                RayCastBoundary(fx, bfz + gridSize.y - borderOffset,
+                    u + detailedMinX, detailedMaxZ, SamplerTree.TBorder, sampler);
             }
             for (int v = 1; v < detailedSize; ++v)
             {
-                float fz = (curZIdx + (float)v / detailedSize) * gridSize[1];
-                RayCastBoundary(bfx + borderOffset, fz, detailedX, v + detailedZ, SamplerTree.LBorder, sampler);
-                RayCastBoundary(bfx + gridSize[0] - borderOffset, fz,
-                    detailedX + detailedSize - 1, v + detailedZ, SamplerTree.RBorder, sampler);
+                float fz = (curZIdx + (float)v / detailedSize) * gridSize.y;
+                RayCastBoundary(bfx + borderOffset, fz,
+                    detailedMinX, v + detailedMinZ, SamplerTree.LBorder, sampler);
+                RayCastBoundary(bfx + gridSize.x - borderOffset, fz,
+                    detailedMaxX, v + detailedMinZ, SamplerTree.RBorder, sampler);
             }
         }
+
         private void RayCastBoundary(float fx, float fz, int x, int z, byte bk, SamplerTree sampler)
         {
-            Vector3 hitpos = check_start + fx * Vector3.right + fz * Vector3.forward;
-            hitpos.x = Mathf.Clamp(hitpos.x, volBnd.min.x, volBnd.max.x);
-            hitpos.z = Mathf.Clamp(hitpos.z, volBnd.min.z, volBnd.max.z);
-
-            float local_x = (hitpos.x - volBnd.min.x) / volBnd.size.x;
-            float local_y = (hitpos.z - volBnd.min.z) / volBnd.size.z;
-            hitpos.y = terrain.SampleHeight(hitpos) + terrain.gameObject.transform.position.y;
-            var hitnormal = terrain.terrainData.GetInterpolatedNormal(local_x, local_y);
-
-            SampleVertexData vert = new SampleVertexData();
-            vert.Position = hitpos;
-            vert.Normal = hitnormal;
-            vert.UV = new Vector2(fx / maxX / gridSize[0], fz / maxZ / gridSize[1]);
+            // world space
+            Vector3 hitPos = check_start + fx * Vector3.right + fz * Vector3.forward;
+            hitPos.x = Mathf.Clamp(hitPos.x, volBnd.min.x, volBnd.max.x);
+            hitPos.z = Mathf.Clamp(hitPos.z, volBnd.min.z, volBnd.max.z);
+            hitPos.y = terrain.SampleHeight(hitPos) + terrain.transform.position.y;
+            Vector2 hitUV = new Vector2(fx / volBnd.size.x, fz / volBnd.size.z);
+            float local_x = (hitPos.x - volBnd.min.x) / volBnd.size.x;
+            float local_y = (hitPos.z - volBnd.min.z) / volBnd.size.z;
+            Vector3 hitNormal = terrain.terrainData.GetInterpolatedNormal(local_x, local_y);
+            SampleVertexData vert = new SampleVertexData(hitPos, hitUV, hitNormal);
             sampler.AddBoundary(subdivision, x, z, bk, vert);
         }
+
         public void Update()
         {
             if (IsDone)
                 return;
-            float fx = (curXIdx + 0.5f) * gridSize[0];
-            float fz = (curZIdx + 0.5f) * gridSize[1];
+            float fx = (curXIdx + 0.5f) * gridSize.x;
+            float fz = (curZIdx + 0.5f) * gridSize.y;
             Vector3 center = check_start + fx * Vector3.right + fz * Vector3.forward;
             Vector2 uv = new Vector2((curXIdx + 0.5f) / maxX, (curZIdx + 0.5f) / maxZ);
             Vector2 uvstep = new Vector2(1f / maxX, 1f / maxZ);
-            if (Trees[curXIdx * maxZ + curZIdx] == null)
+            int treeIdx = curXIdx * maxZ + curZIdx;
+            if (Trees[treeIdx] == null)
             {
                 var t = new SamplerTree(subdivision, center, gridSize, uv, uvstep);
                 t.BND = new Bounds(new Vector3(center.x, center.y, center.z), new Vector3(gridSize.x, volBnd.size.y / 2, gridSize.y));
-                Trees[curXIdx * maxZ + curZIdx] = t;
+                Trees[treeIdx] = t;
             }
-            ScanTree(Trees[curXIdx * maxZ + curZIdx]);
+            ScanTree(Trees[treeIdx]);
             //update idx
             ++curXIdx;
             if (curXIdx >= maxX)
@@ -379,6 +392,7 @@
                 ++curZIdx;
             }
         }
+
         private Vector3 AverageNormal(List<SampleVertexData> lvers)
         {
             Vector3 normal = Vector3.up;
@@ -388,27 +402,31 @@
             }
             return normal.normalized;
         }
+
         private void MergeCorners(List<SampleVertexData> l0, List<SampleVertexData> l1, List<SampleVertexData> l2,
             List<SampleVertexData> l3)
         {
             List<SampleVertexData> lvers = new List<SampleVertexData>();
             //lb
-            lvers.Add(l0[0]);
-            if (l1 != null)
+            if (l0 != null && l0.Count > 0)
+                lvers.Add(l0[0]);
+            if (l1 != null && l1.Count > 0)
                 lvers.Add(l1[0]);
-            if (l2 != null)
+            if (l2 != null && l2.Count > 0)
                 lvers.Add(l2[0]);
-            if (l3 != null)
+            if (l3 != null && l3.Count > 0)
                 lvers.Add(l3[0]);
             Vector3 normal = AverageNormal(lvers);
-            l0[0].Normal = normal;
-            if (l1 != null)
+            if (l0 != null && l0.Count > 0)
+                l0[0].Normal = normal;
+            if (l1 != null && l1.Count > 0)
                 l1[0].Normal = normal;
-            if (l2 != null)
+            if (l2 != null && l2.Count > 0)
                 l2[0].Normal = normal;
-            if (l3 != null)
+            if (l3 != null && l3.Count > 0)
                 l3[0].Normal = normal;
         }
+
         private void StitchCorner(int x, int z)
         {
             SamplerTree center = GetSubTree(x, z);
@@ -471,6 +489,7 @@
                 if (top != null) top.StitchedBorders.Add(SamplerTree.RBCorner);
             }
         }
+
         public void FillData()
         {
             for (int i = 0; i < Trees.Length; ++i)

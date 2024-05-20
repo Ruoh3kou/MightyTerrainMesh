@@ -17,18 +17,31 @@
             Normal = 0.5f * (Normal + other.Normal);
             UV = 0.5f * (UV + other.UV);
         }
+
+        public SampleVertexData(Vector3 position, Vector2 uv)
+        {
+            this.Position = position;
+            this.UV = uv;
+        }
+        
+        public SampleVertexData(Vector3 position, Vector2 uv, Vector3 normal)
+        {
+            this.Position = position;
+            this.UV = uv;
+            this.Normal = normal;
+        }
     }
 
-    public interface ITerrainTreeScaner
+    public interface ITerrainTreeScanner
     {
         void Run(Vector3 center, out Vector3 hitpos, out Vector3 hitnormal);
     }
 
     public abstract class SamplerBase
     {
-        public virtual void RunSample(ITerrainTreeScaner scaner)
+        public virtual void RunSample(ITerrainTreeScanner scanner)
         {
-            scaner.Run(mVertex.Position, out mVertex.Position, out mVertex.Normal);
+            scanner.Run(mVertex.Position, out mVertex.Position, out mVertex.Normal);
         }
         protected SampleVertexData mVertex;
         public Dictionary<byte, SampleVertexData> Boundaries = new Dictionary<byte, SampleVertexData>();
@@ -43,9 +56,7 @@
         public Vector2 UV { get { return mVertex != null ? mVertex.UV : Vector2.zero; } }
         public SamplerLeaf(Vector3 center, Vector2 uv)
         {
-            mVertex = new SampleVertexData();
-            mVertex.Position = center;
-            mVertex.UV = uv;
+            mVertex = new SampleVertexData(center, uv);
         }
         public SamplerLeaf(SampleVertexData vert)
         {
@@ -87,9 +98,7 @@
         //build a full tree
         public SamplerNode(int sub, Vector3 center, Vector2 size, Vector2 uv, Vector2 uvstep)
         {
-            mVertex = new SampleVertexData();
-            mVertex.Position = center;
-            mVertex.UV = uv;
+            mVertex = new SampleVertexData(center, uv);
             Vector2 subsize = 0.5f * size;
             Vector2 subuvstep = 0.5f * uvstep;
             if (sub > 1)
@@ -132,12 +141,12 @@
                 bd[k].Add(Boundaries[k]);
             }
         }
-        public override void RunSample(ITerrainTreeScaner scaner)
+        public override void RunSample(ITerrainTreeScanner scanner)
         {
-            base.RunSample(scaner);
+            base.RunSample(scanner);
             for (int i = 0; i < 4; ++i)
             {
-                Children[i].RunSample(scaner);
+                Children[i].RunSample(scanner);
             }
         }
         public override void AddBoundary(int subdivision, int x, int z, byte bk, SampleVertexData point)
@@ -240,9 +249,8 @@
         }
         public void AddBoundary(int subdivision, int x, int z, byte bk, SampleVertexData vert)
         {
-            if (mNode is SamplerNode)
+            if (mNode is SamplerNode node)
             {
-                SamplerNode node = (SamplerNode)mNode;
                 node.AddBoundary(subdivision, x, z, bk, vert);
             }
         }
@@ -275,9 +283,9 @@
                 Boundaries[flag].Add(vt);
             }
         }
-        public void RunSampler(ITerrainTreeScaner scaner)
+        public void RunSampler(ITerrainTreeScanner scanner)
         {
-            mNode.RunSample(scaner);
+            mNode.RunSample(scanner);
         }
         public void FillData(float angleErr)
         {
