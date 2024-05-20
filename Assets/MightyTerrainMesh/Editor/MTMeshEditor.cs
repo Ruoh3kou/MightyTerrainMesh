@@ -89,10 +89,10 @@ public class MTMeshEditor : EditorWindow
     //
     private void OnGUI()
     {
-        Terrain curentTarget = EditorGUILayout.ObjectField("Convert Target",terrainTarget, typeof(Terrain), true) as Terrain;
-        if (curentTarget != terrainTarget)
+        Terrain currentTarget = EditorGUILayout.ObjectField("Convert Target",terrainTarget, typeof(Terrain), true) as Terrain;
+        if (currentTarget != terrainTarget)
         {
-            terrainTarget = curentTarget;
+            terrainTarget = currentTarget;
         }
         int curSliceCount = Mathf.FloorToInt(Mathf.Pow(2, QuadTreeDepth));
         int sliceCount = EditorGUILayout.IntField("Slice Count(NxN)", curSliceCount);
@@ -201,14 +201,14 @@ public class MTMeshEditor : EditorWindow
             GameObject[] prefabRoot = new GameObject[LODSettings.Length];
             if (bakeMaterial)
             {
-                FullBakeMeshes(bakers, curentTarget, lodFolder, prefabRoot);
+                FullBakeMeshes(bakers, currentTarget, lodFolder, prefabRoot);
             }
             else
             {
                 List<Material> mats = new List<Material>();
                 var folder = lodFolder[0];
                 List<string> matPath = new List<string>();
-                MTMatUtils.SaveMixMaterials(folder, curentTarget.name, curentTarget, matPath);
+                MTMatUtils.SaveMixMaterials(folder, currentTarget.name, currentTarget, matPath);
                 foreach(var p in matPath)
                 {
                     var m = AssetDatabase.LoadAssetAtPath<Material>(p);
@@ -221,7 +221,7 @@ public class MTMeshEditor : EditorWindow
                     //prefab
                     if (prefabRoot[baker.lod] == null)
                     {
-                        prefabRoot[baker.lod] = new GameObject(curentTarget.name);
+                        prefabRoot[baker.lod] = new GameObject(currentTarget.name);
                     }
                     GameObject meshGo = new GameObject(baker.meshId.ToString());
                     var filter = meshGo.AddComponent<MeshFilter>();
@@ -235,7 +235,7 @@ public class MTMeshEditor : EditorWindow
             for (int i=prefabRoot.Length - 1; i>= 0; --i)
             {
                 var folder = lodFolder[i];
-                PrefabUtility.SaveAsPrefabAsset(prefabRoot[i], folder + "/" + curentTarget.name + ".prefab");
+                PrefabUtility.SaveAsPrefabAsset(prefabRoot[i], folder + "/" + currentTarget.name + ".prefab");
                 DestroyImmediate(prefabRoot[i]);
             }
             EditorUtility.ClearProgressBar();
@@ -245,9 +245,9 @@ public class MTMeshEditor : EditorWindow
     void FullBakeMeshes(List<MeshPrefabBaker> bakers, Terrain curentTarget, string[] lodFolder, GameObject[] prefabRoot)
     {
         //reload Mats
-        var arrAlbetoMats = new Material[2];
+        var arrAlbedoMats = new Material[2];
         var arrNormalMats = new Material[2];
-        MTMatUtils.GetBakeMaterials(curentTarget, arrAlbetoMats, arrNormalMats);
+        MTMatUtils.GetBakeMaterials(curentTarget, arrAlbedoMats, arrNormalMats);
         var texture = new Texture2D(bakeTextureSize, bakeTextureSize, TextureFormat.RGBA32, false);
         RenderTexture renderTexture = RenderTexture.GetTemporary(bakeTextureSize, bakeTextureSize);
         //
@@ -262,12 +262,12 @@ public class MTMeshEditor : EditorWindow
                 AssetDatabase.Refresh();
             }
             //Debug.Log("mesh id : " + baker.meshId + " scale offset : " + baker.scaleOffset);
-            var albeto = string.Format("{0}/Textures/albeto_{1}.png", folder, baker.meshId);
-            SaveBakedTexture(albeto, renderTexture, texture, arrAlbetoMats, baker.scaleOffset);
+            var albedo = string.Format("{0}/Textures/albedo_{1}.png", folder, baker.meshId);
+            SaveBakedTexture(albedo, renderTexture, texture, arrAlbedoMats, baker.scaleOffset);
             var normal = string.Format("{0}/Textures/normal_{1}.png", folder, baker.meshId);
             SaveBakedTexture(normal, renderTexture, texture, arrNormalMats, baker.scaleOffset);
             AssetDatabase.Refresh();
-            var albetoTex = AssetDatabase.LoadAssetAtPath<Texture2D>(albeto);
+            var albedoTex = AssetDatabase.LoadAssetAtPath<Texture2D>(albedo);
             var normalTex = AssetDatabase.LoadAssetAtPath<Texture2D>(normal);
             if (!AssetDatabase.IsValidFolder(Path.Combine(folder, "Materials")))
             {
@@ -275,7 +275,7 @@ public class MTMeshEditor : EditorWindow
                 AssetDatabase.Refresh();
             }
             var matPath = string.Format("{0}/Materials/mat_{1}.mat", folder, baker.meshId);
-            SaveBakedMaterial(matPath, albetoTex, normalTex, new Vector2(baker.scaleOffset.x, baker.scaleOffset.y));
+            SaveBakedMaterial(matPath, albedoTex, normalTex, new Vector2(baker.scaleOffset.x, baker.scaleOffset.y));
             AssetDatabase.Refresh();
             //prefab
             if (prefabRoot[baker.lod] == null)
@@ -290,7 +290,7 @@ public class MTMeshEditor : EditorWindow
             meshGo.transform.parent = prefabRoot[baker.lod].transform;
         }
         RenderTexture.ReleaseTemporary(renderTexture);
-        foreach (var mat in arrAlbetoMats)
+        foreach (var mat in arrAlbedoMats)
             DestroyImmediate(mat);
         foreach (var mat in arrNormalMats)
             DestroyImmediate(mat);
@@ -331,11 +331,11 @@ public class MTMeshEditor : EditorWindow
         byte[] tga = texture.EncodeToTGA();
         File.WriteAllBytes(path, tga);
     }
-    void SaveBakedMaterial(string path, Texture2D albeto, Texture2D normal, Vector2 size)
+    void SaveBakedMaterial(string path, Texture2D albedo, Texture2D normal, Vector2 size)
     {
         var scale = new Vector2(1f / size.x, 1f / size.y);
         Material tMat = new Material(Shader.Find("MT/TerrainVTLit"));
-        tMat.SetTexture("_Diffuse", albeto);
+        tMat.SetTexture("_Diffuse", albedo);
         tMat.SetTextureScale("_Diffuse", scale);
         tMat.SetTexture("_Normal", normal);
         tMat.SetTextureScale("_Normal", scale);

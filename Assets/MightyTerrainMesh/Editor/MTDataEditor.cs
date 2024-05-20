@@ -40,12 +40,12 @@ public class MTDataEditor : EditorWindow
     //
     private void OnGUI()
     {
-        Terrain curentTarget = EditorGUILayout.ObjectField("Convert Target", terrainTarget, typeof(Terrain), true) as Terrain;
-        if (curentTarget != terrainTarget)
+        Terrain currentTarget = EditorGUILayout.ObjectField("Convert Target", terrainTarget, typeof(Terrain), true) as Terrain;
+        if (currentTarget != terrainTarget)
         {
-            terrainTarget = curentTarget;
+            terrainTarget = currentTarget;
         }
-        int curSliceCount = Mathf.FloorToInt(1 << QuadTreeDepth);
+        int curSliceCount = 1 << QuadTreeDepth;
         int sliceCount = EditorGUILayout.IntField("Slice Count(NxN)", curSliceCount);
         if (sliceCount != curSliceCount)
         {
@@ -128,7 +128,7 @@ public class MTDataEditor : EditorWindow
                 folder1 = AssetDatabase.CreateFolder("Assets", "MeshData");
                 folder1 = AssetDatabase.GUIDToAssetPath(folder1);
             }
-            var meshFulllPath = Application.dataPath + folder1.Substring(folder1.IndexOf("/"));
+            var meshFullPath = Application.dataPath + folder1.Substring(folder1.IndexOf("/"));
             //
             MTData dataHeader = ScriptableObject.CreateInstance<MTData>();
             dataHeader.MeshDataPack = datapack;
@@ -151,7 +151,7 @@ public class MTDataEditor : EditorWindow
                     {
                         if (stream.Length > 0)
                         {
-                            File.WriteAllBytes(string.Format("{0}/{1}_{2}.bytes", meshFulllPath, terrainTarget.name, start_meshId), stream.ToArray());
+                            File.WriteAllBytes(string.Format("{0}/{1}_{2}.bytes", meshFullPath, terrainTarget.name, start_meshId), stream.ToArray());
                             stream.Close();
                             start_meshId = data.meshId;
                             stream = new MemoryStream();
@@ -174,7 +174,7 @@ public class MTDataEditor : EditorWindow
                 //last one
                 if (stream.Length > 0 && start_meshId >= 0)
                 {
-                    File.WriteAllBytes(string.Format("{0}/{1}_{2}.bytes", meshFulllPath, terrainTarget.name, start_meshId), stream.ToArray());
+                    File.WriteAllBytes(string.Format("{0}/{1}_{2}.bytes", meshFullPath, terrainTarget.name, start_meshId), stream.ToArray());
                     stream.Close();
                 }
                 AssetDatabase.Refresh();
@@ -193,21 +193,21 @@ public class MTDataEditor : EditorWindow
                 dataHeader.TreeData = AssetDatabase.LoadAssetAtPath(string.Format("{0}/treeData.bytes", folder0), typeof(TextAsset)) as TextAsset;
             }
             List<string> detailMats = new List<string>();
-            List<string> bakeAlbetoMats = new List<string>();
+            List<string> bakeAlbedoMats = new List<string>();
             List<string> bakeBumpMats = new List<string>();
             //materials for baking resource
             MTMatUtils.SaveMixMaterials(folder0, terrainTarget.name, terrainTarget, detailMats);
             //materials for baking texture
-            MTMatUtils.SaveVTMaterials(folder0, terrainTarget.name, terrainTarget, bakeAlbetoMats, bakeBumpMats);
+            MTMatUtils.SaveVTMaterials(folder0, terrainTarget.name, terrainTarget, bakeAlbedoMats, bakeBumpMats);
             dataHeader.DetailMats = new Material[detailMats.Count];
             for (int p = 0; p < detailMats.Count; ++p)
             {
                 dataHeader.DetailMats[p] = AssetDatabase.LoadAssetAtPath(detailMats[p], typeof(Material)) as Material;
             }
-            dataHeader.BakeDiffuseMats = new Material[bakeAlbetoMats.Count];
-            for (int p = 0; p < bakeAlbetoMats.Count; ++p)
+            dataHeader.BakeDiffuseMats = new Material[bakeAlbedoMats.Count];
+            for (int p = 0; p < bakeAlbedoMats.Count; ++p)
             {
-                dataHeader.BakeDiffuseMats[p] = AssetDatabase.LoadAssetAtPath(bakeAlbetoMats[p], typeof(Material)) as Material;
+                dataHeader.BakeDiffuseMats[p] = AssetDatabase.LoadAssetAtPath(bakeAlbedoMats[p], typeof(Material)) as Material;
             }
             dataHeader.BakeNormalMats = new Material[bakeBumpMats.Count];
             for (int p = 0; p < bakeBumpMats.Count; ++p)
@@ -221,8 +221,8 @@ public class MTDataEditor : EditorWindow
             AssetDatabase.CreateAsset(bakedMat, bakedMatPath);
             dataHeader.BakedMat = AssetDatabase.LoadAssetAtPath(bakedMatPath, typeof(Material)) as Material;
             //export height map
-            ExportHeightMap(dataHeader, curentTarget, topFulllPath, folder0);
-            ExportDetails(dataHeader, curentTarget, topFulllPath, folder0);
+            ExportHeightMap(dataHeader, currentTarget, topFulllPath, folder0);
+            ExportDetails(dataHeader, currentTarget, topFulllPath, folder0);
             //
             AssetDatabase.CreateAsset(dataHeader, string.Format("{0}/{1}.asset", folder0, terrainTarget.name));
             AssetDatabase.SaveAssets();

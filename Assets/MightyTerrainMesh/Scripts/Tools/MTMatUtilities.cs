@@ -45,7 +45,7 @@
             return null;
 #endif
         }
-        private static void SaveMixMaterail(string path, string dataName, Terrain t, int matIdx, int layerStart, string shaderName, List<string> assetPath)
+        private static void SaveMixMaterial(string path, string dataName, Terrain t, int matIdx, int layerStart, string shaderName, List<string> assetPath)
         {
 #if UNITY_EDITOR
             Texture2D alphaMap = ExportAlphaMap(path, dataName, t, matIdx);
@@ -76,7 +76,7 @@
                 tMat.SetFloat(string.Format("_NormalScale{0}", idx), layer.normalScale);
                 tMat.SetFloat(string.Format("_Metallic{0}", idx), layer.metallic);
                 tMat.SetFloat(string.Format("_Smoothness{0}", idx), layer.smoothness);
-                tMat.EnableKeyword("_NORMALMAP");      
+                tMat.EnableKeyword("_NORMALMAP");
                 if (layer.maskMapTexture != null)
                 {
                     tMat.EnableKeyword("_MASKMAP");
@@ -105,18 +105,18 @@
             if (matCount <= 0)
                 return;
             //base pass
-            SaveMixMaterail(path, dataName, t, 0, 0, "MT/TerrainLit", assetPath);
+            SaveMixMaterial(path, dataName, t, 0, 0, "MT/TerrainLit", assetPath);
             for (int i=1; i<matCount; ++i)
             {
-                SaveMixMaterail(path, dataName, t, i, i * 4, "MT/TerrainLitAdd", assetPath);
+                SaveMixMaterial(path, dataName, t, i, i * 4, "MT/TerrainLitAdd", assetPath);
             }
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 #endif
         }
 
-        private static void SaveVTMaterail(string path, string dataName, Terrain t, int matIdx, int layerStart, string shaderPostfix,
-            List<string> albetoPath, List<string> bumpPath)
+        private static void SaveVTMaterial(string path, string dataName, Terrain t, int matIdx, int layerStart, string shaderPostfix,
+            List<string> albedoPath, List<string> bumpPath)
         {
 #if UNITY_EDITOR
             Texture2D alphaMap = ExportAlphaMap(path, dataName, t, matIdx);
@@ -186,15 +186,15 @@
                 bumpmat.SetFloat(string.Format("_Metallic{0}", idx), layer.metallic);
             }
             AssetDatabase.CreateAsset(tMat, mathPath);
-            if (albetoPath != null)
-                albetoPath.Add(mathPath);
+            if (albedoPath != null)
+                albedoPath.Add(mathPath);
             AssetDatabase.CreateAsset(bumpmat, bumpMatPath);
             if (bumpPath != null)
                 bumpPath.Add(bumpMatPath);
 #endif
         }
         public static void SaveVTMaterials(string path, string dataName, Terrain t,
-            List<string> albetoPath, List<string> bumpPath)
+            List<string> albedoPath, List<string> bumpPath)
         {
 #if UNITY_EDITOR
             if (t.terrainData == null)
@@ -206,16 +206,16 @@
             if (matCount <= 0)
                 return;
             //base pass
-            SaveVTMaterail(path, dataName, t, 0, 0, "", albetoPath, bumpPath);
+            SaveVTMaterial(path, dataName, t, 0, 0, "", albedoPath, bumpPath);
             for (int i = 1; i < matCount; ++i)
             {
-                SaveVTMaterail(path, dataName, t, i, i * 4, "Add", albetoPath, bumpPath);
+                SaveVTMaterial(path, dataName, t, i, i * 4, "Add", albedoPath, bumpPath);
             }
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 #endif
         }
-        private static Material GetBakeAlbeto(Terrain t, int matIdx, int layerStart, string shaderName)
+        private static Material GetBakeAlbedo(Terrain t, int matIdx, int layerStart, string shaderName)
         {
 #if UNITY_EDITOR
             Material tMat = new Material(Shader.Find(shaderName));
@@ -286,7 +286,7 @@
 #endif
         }
 
-        public static void GetBakeMaterials(Terrain t, Material[] albetos, Material[] bumps)
+        public static void GetBakeMaterials(Terrain t, Material[] albedos, Material[] bumps)
         {
 #if UNITY_EDITOR
             if (t.terrainData == null)
@@ -295,16 +295,16 @@
                 return;
             }
             int matCount = t.terrainData.alphamapTextureCount;
-            if (matCount <= 0 || albetos == null || albetos.Length < 1 || bumps == null || bumps.Length < 1)
+            if (matCount <= 0 || albedos == null || albedos.Length < 1 || bumps == null || bumps.Length < 1)
                 return;
             //base pass
-            albetos[0] = GetBakeAlbeto(t, 0, 0, "MT/VTDiffuse");
-            for (int i = 1; i < matCount && i < albetos.Length; ++i)
+            albedos[0] = GetBakeAlbedo(t, 0, 0, "MT/VTDiffuse");
+            for (int i = 1; i < matCount && i < albedos.Length; ++i)
             {
-                albetos[i] = GetBakeAlbeto(t, i, i * 4, "MT/VTDiffuseAdd");
+                albedos[i] = GetBakeAlbedo(t, i, i * 4, "MT/VTDiffuseAdd");
             }
             bumps[0] = GetBakeNormal(t, 0, 0, "MT/VTBump");
-            for (int i = 1; i < matCount && i < albetos.Length; ++i)
+            for (int i = 1; i < matCount && i < albedos.Length; ++i)
             {
                 bumps[i] = GetBakeNormal(t, i, i * 4, "MT/VTBumpAdd");
             }
