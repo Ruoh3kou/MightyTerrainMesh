@@ -1,4 +1,5 @@
 .vs/
+.idea/
 Assembly-CSharp.csproj
 Assembly-CSharp-Editor.csproj
 MightyTerrainMesh.sln
