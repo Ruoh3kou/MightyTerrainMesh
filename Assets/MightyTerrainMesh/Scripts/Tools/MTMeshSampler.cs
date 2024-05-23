@@ -272,14 +272,16 @@
             var tree = BoundaryKDTree[flag];
             foreach (var vt in src)
             {
-                var nodes = tree.GetNearestNeighbours(new float[] { vt.Position.x, vt.Position.z }, 1);
+                var point = new float[] { vt.Position.x, vt.Position.z };
+                var nodes = tree.GetNearestNeighbours(point, 1);
                 if (nodes != null && nodes.Length > 0)
                 {
-                    var dis = Vector2.Distance(new Vector2(vt.Position.x, vt.Position.z), new Vector2(nodes[0].Point[0], nodes[0].Point[1]));
+                    var dis = Vector2.Distance(new Vector2(vt.Position.x, vt.Position.z), 
+                        new Vector2(nodes[0].Point[0], nodes[0].Point[1]));
                     if (dis <= minDis)
                         continue;
                 }
-                tree.Add(new float[] { vt.Position.x, vt.Position.z }, 0);
+                tree.Add(point, 0);
                 Boundaries[flag].Add(vt);
             }
         }

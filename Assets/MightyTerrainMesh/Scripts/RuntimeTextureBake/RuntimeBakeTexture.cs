@@ -141,9 +141,9 @@
             _qPool.Clear();
         }
         public RuntimeBakeTexture[] textures;
-        private IMTVirtualTexutreReceiver receiver;
+        private IMTVirtualTextureReceiver receiver;
         private long cmdId = 0;
-        public void Reset(long cmd, RuntimeBakeTexture[] ts, IMTVirtualTexutreReceiver r)
+        public void Reset(long cmd, RuntimeBakeTexture[] ts, IMTVirtualTextureReceiver r)
         {
             cmdId = cmd;
             textures = ts;

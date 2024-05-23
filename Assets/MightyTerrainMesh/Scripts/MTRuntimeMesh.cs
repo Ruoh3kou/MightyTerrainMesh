@@ -5,13 +5,13 @@
     using System.Collections.Generic;
     using UnityEngine;
 
-    public interface IMTVirtualTexutreReceiver
+    public interface IMTVirtualTextureReceiver
     {
         long WaitCmdId { get; }
         void OnTextureReady(long cmdId, IMTVirtualTexture[] textures);
     }
 
-    public class MTPooledRenderMesh : IMTVirtualTexutreReceiver
+    public class MTPooledRenderMesh : IMTVirtualTextureReceiver
     {
         private static Queue<MTPooledRenderMesh> _qPool = new Queue<MTPooledRenderMesh>();
         public static MTPooledRenderMesh Pop()
@@ -158,8 +158,8 @@
             mMats[0].SetTextureScale("_Normal", scale);
             mMats[0].SetTextureOffset("_Normal", offset);
         }
-        long IMTVirtualTexutreReceiver.WaitCmdId { get { return waitBackCmdId; } }
-        void IMTVirtualTexutreReceiver.OnTextureReady(long cmdId, IMTVirtualTexture[] textures)
+        long IMTVirtualTextureReceiver.WaitCmdId { get { return waitBackCmdId; } }
+        void IMTVirtualTextureReceiver.OnTextureReady(long cmdId, IMTVirtualTexture[] textures)
         {
             if (mRM == null || cmdId != waitBackCmdId)
             {

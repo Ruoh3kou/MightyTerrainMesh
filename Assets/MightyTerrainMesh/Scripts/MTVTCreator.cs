@@ -39,7 +39,7 @@
         public Material[] BakeNormal;
         public Vector2 uvMin;
         public Vector2 uvMax;
-        public IMTVirtualTexutreReceiver receiver;
+        public IMTVirtualTextureReceiver receiver;
     }
 
     public interface IMTVirtualTexture
